@@ -21,10 +21,11 @@ contract MyGovernor is
 {
     constructor(
         IVotes _token,
-        TimelockController _timelock
+        TimelockController _timelock,
+        uint32 levels
     )
-        Governor("MyGovernor")
-        GovernorSettings(7200 /* 1 day */, 50400 /* 1 week */, 0)
+        Governor("MyGovernor", levels)
+        GovernorSettings(1, /* 1 block */ 50400, /* 1 week */ 0)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
@@ -108,9 +109,4 @@ contract MyGovernor is
     {
         return super._executor();
     }
-
-    function summitVote(
-        uint256 proposalId,
-        uint256 commitment
-    ) public returns (uint256) {}
 }

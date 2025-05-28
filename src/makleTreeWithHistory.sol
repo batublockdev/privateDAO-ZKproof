@@ -10,20 +10,26 @@ contract MerkleTreeWithHistory {
 
     // filledSubtrees and roots could be bytes32[size], but using mappings makes it cheaper because
     // it removes index range check on every interaction
-    mapping(uint256 => uint256) public filledSubtrees;
-    uint256 public root = 0;
-    uint32 public nextIndex = 0;
+
+    struct MakleTree {
+        mapping(uint256 => uint256) filledSubtrees;
+        uint256 root;
+        uint32 nextIndex;
+    }
+    mapping(uint256 proposalId => MakleTree) public _proposalTrees;
 
     constructor(uint32 _levels) {
         require(_levels > 0, "_levels should be greater than zero");
         require(_levels < 32, "_levels should be less than 32");
         levels = _levels;
+    }
 
-        for (uint32 i = 0; i < _levels; i++) {
-            filledSubtrees[i] = zeros(i);
+    function createMakleTree(uint256 proposalId) public {
+        for (uint32 i = 0; i < levels; i++) {
+            _proposalTrees[proposalId].filledSubtrees[i] = zeros(i);
         }
 
-        root = zeros(_levels - 1);
+        _proposalTrees[proposalId].root = zeros(levels - 1);
     }
 
     /**
@@ -37,8 +43,11 @@ contract MerkleTreeWithHistory {
         return out;
     }
 
-    function _insert(uint256 _leaf) external returns (uint32 index) {
-        uint32 _nextIndex = nextIndex;
+    function _insert(
+        uint256 proposalId,
+        uint256 _leaf
+    ) internal returns (uint32 index) {
+        uint32 _nextIndex = _proposalTrees[proposalId].nextIndex;
         require(
             _nextIndex != uint32(2) ** levels,
             "Merkle tree is full. No more leaves can be added"
@@ -52,46 +61,25 @@ contract MerkleTreeWithHistory {
             if (currentIndex % 2 == 0) {
                 left = currentLevelHash;
                 right = zeros(i);
-                filledSubtrees[i] = currentLevelHash;
+                _proposalTrees[proposalId].filledSubtrees[i] = currentLevelHash;
             } else {
-                left = filledSubtrees[i];
+                left = _proposalTrees[proposalId].filledSubtrees[i];
                 right = currentLevelHash;
             }
             currentLevelHash = hashLeftRight(left, right);
             currentIndex /= 2;
         }
 
-        root = currentLevelHash;
-        nextIndex = _nextIndex + 1;
+        _proposalTrees[proposalId].root = currentLevelHash;
+        _proposalTrees[proposalId].nextIndex = _nextIndex + 1;
         return _nextIndex;
     }
 
     /**
-    @dev Whether the root is present in the root history
- 
-  function isKnownRoot(bytes32 _root) public view returns (bool) {
-    if (_root == 0) {
-      return false;
-    }
-    uint32 _currentRootIndex = currentRootIndex;
-    uint32 i = _currentRootIndex;
-    do {
-      if (_root == roots[i]) {
-        return true;
-      }
-      if (i == 0) {
-        i = ROOT_HISTORY_SIZE;
-      }
-      i--;
-    } while (i != _currentRootIndex);
-    return false;
-  } */
-
-    /**
     @dev Returns the last root
   */
-    function getLastRoot() public view returns (uint256) {
-        return root;
+    function getLastRoot(uint256 proposalId) public view returns (uint256) {
+        return _proposalTrees[proposalId].root;
     }
 
     /// @dev provides Zero (Empty) elements for a MiMC MerkleTree. Up to 32 levels

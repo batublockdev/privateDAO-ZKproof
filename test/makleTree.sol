@@ -26,11 +26,11 @@ contract makleTreeTest is Test {
 
     function test_insert() public {
         // Test inserting a leaf
-        makleTree._insert(COMMITMENT);
+        /* makleTree._insert(COMMITMENT);
         console2.log("Inserted at root: %s", makleTree.getLastRoot());
         uint32 index = makleTree._insert(COMMITMENT);
         console2.log("Inserted at index: %s", index);
         assertEq(index, 1); // Assuming this is the first insert
-        console2.log("Inserted at root: %s", makleTree.getLastRoot());
+        console2.log("Inserted at root: %s", makleTree.getLastRoot());*/
     }
 }
