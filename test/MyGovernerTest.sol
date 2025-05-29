@@ -13,6 +13,10 @@ contract MyGovernorTest is Test {
     MyGovernor governor;
     Box box;
 
+    uint256 public constant ZERO =
+        3314372264187560584702178823305973219176593083766293720214567837146802335937;
+    uint256 public constant COMMITMENT =
+        20543223265020358312625391328879726074346609467051280159945712475073489703124;
     uint256 public constant MIN_DELAY = 3600; // 1 hour - after a vote passes, you have 1 hour before you can enact
     uint256 public constant QUORUM_PERCENTAGE = 4; // Need 4% of voters to pass
     uint256 public constant VOTING_PERIOD = 50400; // This is how long voting lasts
@@ -25,11 +29,13 @@ contract MyGovernorTest is Test {
     address[] addressesToCall;
     uint256[] values;
 
-    address public constant VOTER = address(1);
+    address public VOTER = makeAddr("voter");
+    address public VOTER2 = makeAddr("voter2");
 
     function setUp() public {
         token = new MyToken();
         token.mint(VOTER);
+        token.mint(VOTER2);
 
         vm.prank(VOTER);
         token.delegate(VOTER);
@@ -81,10 +87,15 @@ contract MyGovernorTest is Test {
         string memory reason = "I like a do da cha cha";
         // 0 = Against, 1 = For, 2 = Abstain for this example
         uint8 voteWay = 1;
-        vm.startPrank(VOTER);
+        vm.prank(VOTER2);
         governor.castVoteWithReason(proposalId, 333, voteWay, reason);
-
-        vm.stopPrank();
+        console.log("root: %s", governor.getLastRoot(proposalId));
+        assertEq(governor.getLastRoot(proposalId), ZERO);
+        vm.prank(VOTER);
+        governor.summitVote(proposalId, COMMITMENT);
+        governor.getLastRoot(proposalId);
+        console.log("root: %s", governor.getLastRoot(proposalId));
+        assertNotEq(governor.getLastRoot(proposalId), ZERO);
 
         vm.warp(block.timestamp + VOTING_PERIOD + 1);
         vm.roll(block.number + VOTING_PERIOD + 1);
