@@ -6,7 +6,7 @@ import {MyGovernor} from "../src/Governor.sol";
 import {MyToken} from "../src/GovToken.sol";
 import {TimeLock} from "../src/TimeLock.sol";
 import {Box} from "../src/Box.sol";
-import {Groth16Verifier} from "../src/ZKPVerifier.sol";
+import {Groth16Verifier} from "../src/ZKP_Verifier.sol";
 
 contract MyGovernorTest is Test {
     MyToken token;
@@ -45,7 +45,7 @@ contract MyGovernorTest is Test {
         vm.prank(VOTER);
         token.delegate(VOTER);
         timelock = new TimeLock(MIN_DELAY, proposers, executors);
-        governor = new MyGovernor(token, timelock, 20);
+        governor = new MyGovernor(token, timelock, 20, address(verifier));
         bytes32 proposerRole = timelock.PROPOSER_ROLE();
         bytes32 executorRole = timelock.EXECUTOR_ROLE();
 
@@ -92,52 +92,27 @@ contract MyGovernorTest is Test {
         string memory reason = "I like a do da cha cha";
         // 0 = Against, 1 = For, 2 = Abstain for this example
         uint8 voteWay = 1;
-        vm.prank(VOTER2);
-        //governor.castVoteWithReason(proposalId, 333, voteWay, reason);
-        console.log("root: %s", governor.getLastRoot(proposalId));
-        assertEq(governor.getLastRoot(proposalId), ZERO);
         vm.prank(VOTER);
         governor.summitVote(proposalId, COMMITMENT);
-        governor.getLastRoot(proposalId);
-        console.log("root: %s", governor.getLastRoot(proposalId));
         uint256[8] memory proof = [
-            19784089813153104539733794791124798902709579659651807205985955776199460597453,
-            10731522097037926826426386698045725621692488854983477387207460367760933268761,
-            16388268542266325098598021934781070579159367306707450650321201243488134287249,
-            21419302285973490267464830229133095275719267507207696839934608461308859056456,
-            6676622145037186258886481996585942089697162517535709030266263432813638803340,
-            4178610333791985931854082107266312118125667565414451316631966506505238701637,
-            896755678228160637171591548836471126782712227095522396489866182417469727191,
-            14698831525816631146985423211453505076460221178970876513193623307341937747945
+            1291994846396078613044574897177224119187603235626790482382986709270615610660,
+            11418028624131748828325833568108100807637292497137959178892501834812267781589,
+            15307144925250882126508909830121112268311797725366591107187283040749027038051,
+            19121243146002381672368451937259115381293170521977261710324651706105037953130,
+            546095556106703638693576158784533379952904102891789936496015709648147352514,
+            3925174758087334945311755721237858927615284060728218310924261845762381850125,
+            4446524021056083204779206370924040594838291933571077817049533252467235158133,
+            14226643594824731874337614245245804908106811669913443099387467886105998358741
         ];
         uint256 nullfier = 1568331803839604787979069408914956745900061282541867904312135814170319910966;
-        uint256 rootx = governor.getLastRoot(proposalId);
-        uint[2] memory _pA = [
-            19784089813153104539733794791124798902709579659651807205985955776199460597453,
-            10731522097037926826426386698045725621692488854983477387207460367760933268761
-        ];
-        uint[2][2] memory _pB = [
-            [
-                21419302285973490267464830229133095275719267507207696839934608461308859056456,
-                16388268542266325098598021934781070579159367306707450650321201243488134287249
-            ],
-            [
-                4178610333791985931854082107266312118125667565414451316631966506505238701637,
-                6676622145037186258886481996585942089697162517535709030266263432813638803340
-            ]
-        ];
-        uint[2] memory _pC = [
-            896755678228160637171591548836471126782712227095522396489866182417469727191,
-            14698831525816631146985423211453505076460221178970876513193623307341937747945
-        ];
-        uint[2] memory _pubSignals = [
-            ROOT,
-            1568331803839604787979069408914956745900061282541867904312135814170319910966
-        ];
-        bool dio = verifier.verifyProof(_pA, _pB, _pC, _pubSignals);
-        assertTrue(dio, "Proof verification failed");
-        assertNotEq(governor.getLastRoot(proposalId), ROOT);
-
+        vm.prank(VOTER2);
+        governor.castVoteWithReason(
+            proposalId,
+            proof,
+            nullfier,
+            voteWay,
+            reason
+        );
         vm.warp(block.timestamp + VOTING_PERIOD + 1);
         vm.roll(block.number + VOTING_PERIOD + 1);
 

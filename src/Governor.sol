@@ -22,9 +22,10 @@ contract MyGovernor is
     constructor(
         IVotes _token,
         TimelockController _timelock,
-        uint32 levels
+        uint32 levels,
+        address verifierAddress
     )
-        Governor("MyGovernor", levels)
+        Governor("MyGovernor", levels, verifierAddress)
         GovernorSettings(1, /* 1 block */ 50400, /* 1 week */ 0)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
