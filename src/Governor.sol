@@ -28,7 +28,7 @@ contract MyGovernor is
         Governor("MyGovernor", levels, verifierAddress)
         GovernorSettings(1, /* 1 block */ 50400, /* 1 week */ 0)
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
+        GovernorVotesQuorumFraction(50) // 50% quorum
         GovernorTimelockControl(_timelock)
     {}
 
