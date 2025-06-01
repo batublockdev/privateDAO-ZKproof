@@ -148,7 +148,18 @@ contract MyGovernorTest is Test {
         ];
         uint256 nullfier_3 = 3632311455054646310885570210872861156047878303809142251571035012624167257762;
         vm.startPrank(VOTER2);
-        governor.castVoteWithReason(
+        uint256[3][] memory data = new uint256[3][](3);
+        data[0] = [proposalId, nullfier, voteWay];
+        data[1] = [proposalId, nullfier_2, voteWay];
+        data[2] = [proposalId, nullfier_3, 0];
+
+        uint256[8][] memory _proofs = new uint256[8][](3);
+        _proofs[0] = proof;
+        _proofs[1] = proof_2;
+        _proofs[2] = proof_3;
+        governor._castVotes(data, _proofs);
+
+        /*governor.castVoteWithReason(
             proposalId,
             proof,
             nullfier,
@@ -162,7 +173,7 @@ contract MyGovernorTest is Test {
             voteWay,
             reason
         );
-        governor.castVoteWithReason(proposalId, proof_3, nullfier_3, 0, reason);
+        governor.castVoteWithReason(proposalId, proof_3, nullfier_3, 0, reason);*/
         vm.stopPrank();
 
         vm.warp(block.timestamp + VOTING_PERIOD + 1);
