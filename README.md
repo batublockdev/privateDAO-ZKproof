@@ -1,66 +1,145 @@
-## Foundry
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+# 🛡️ Private DAO with Anonymous Voting
 
-Foundry consists of:
+A Solidity-based **private DAO** that enables **anonymous, verifiable, and equal-weight voting** using commitment schemes, Merkle trees, and zero-knowledge proofs.  
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+**Inspired by [Tornado Cash](https://tornado.cash/)**, this system borrows privacy mechanics to enable unlinkable votes while maintaining the integrity of the vote count.
 
-## Documentation
+---
 
-https://book.getfoundry.sh/
+## 🧠 Overview
 
-## Usage
+This project implements a **two-phase private voting mechanism** where voters submit a **cryptographic commitment** and later reveal their vote using a **zero-knowledge proof**. The DAO ensures:
+- 🔒 **Private vote submission** with no on-chain link to the voter
+- 🧮 **Verifiable vote counts** using zkSNARKs
+- ⚖️ **Equal voting power** through 1 token per voter
+- ✅ **No double voting** enforced via nullifiers
 
-### Build
+---
 
-```shell
-$ forge build
+## 🔄 Voting Process
+
+### 1. **Summit Vote (Commit Phase)**
+
+```solidity
+function summitVote(uint256 proposalId, uint256 commitment) public returns (uint256)
 ```
 
-### Test
+- Voter submits a cryptographic commitment to their vote.
+- The commitment is inserted into a per-proposal **Merkle tree**, hashed with **Poseidon** (not MiMC).
+- Voter must own **exactly one token**.
+- No one, not even the DAO, can link a vote to the user.
 
-```shell
-$ forge test
+### 2. **Cast Vote (Reveal + ZK Proof)**
+
+```solidity
+function _castVote(
+    uint256 proposalId,
+    uint256[8] memory _proof,
+    uint256 nullifier,
+    uint8 support,
+    string memory reason,
+    bytes memory params
+) internal returns (uint256)
 ```
 
-### Format
+- A zkSNARK proof is submitted that:
+  - Validates the vote is part of the Merkle tree.
+  - Proves the vote direction (`support`) and uniqueness (`nullifier`).
+- Vote is tallied with a fixed weight (`1e18`), avoiding voter fingerprinting.
 
-```shell
-$ forge fmt
+### 3. **Batch Voting (Optional)**
+
+```solidity
+function _castVotes(uint256[3][] memory data, uint256[8][] memory _proofs) public returns (uint256)
 ```
 
-### Gas Snapshots
+- Allows multiple votes to be revealed in one transaction to reduce gas costs.
 
-```shell
-$ forge snapshot
+---
+
+## 🔒 Privacy Guarantees
+
+- ✅ **No address is linked** to a vote.
+- ✅ **Merkle roots** hide the origin of commitments.
+- ✅ **Poseidon hash** ensures SNARK-friendly and efficient tree hashing.
+- ✅ **Nullifiers** prevent double-voting.
+- ✅ **Equal vote weights** avoid linking identities via influence.
+
+---
+
+## 🧰 Tech Stack
+
+- 📦 [Solidity](https://docs.soliditylang.org/)
+- 🏛️ [OpenZeppelin Governor](https://docs.openzeppelin.com/contracts/api/governance)
+- 🔐 [Groth16 zkSNARKs](https://eprint.iacr.org/2016/260.pdf)
+- 🌲 [Poseidon Hash](https://eprint.iacr.org/2019/458) in Circom-based Merkle trees
+- 🧪 [Circom](https://docs.circom.io/) for ZK circuit design
+- 🔧  [Foundry](https://book.getfoundry.sh/)
+
+---
+
+## 📁 Project Structure
+
+```
+contracts/
+  Governor.sol             # Custom DAO logic
+  MerkleTreeWithHistory.sol # Poseidon-based Merkle tree
+  Verifier.sol             # ZK proof verifier
+  VotingToken.sol          # 1 token = 1 voter
+
+circuits/
+  voteProof.circom         # zkSNARK circuit for voting logic
+
+test/
+  Governor.t.sol           # Solidity tests for summit and reveal
+
+
+
 ```
 
-### Anvil
+---
 
-```shell
-$ anvil
+## ✅ Features
+
+- ✅ Anonymous vote submission via commitment scheme
+- ✅ zkSNARK-based vote revealing and verification
+- ✅ Batch vote casting to save gas
+- ✅ Merkle tree with Poseidon hash for efficiency
+- ✅ Tornado Cash-style nullifier protection
+- ✅ Full test coverage (contracts & circuits)
+
+---
+
+## 🧪 Tests
+
+All critical functionalities are covered in the test suite:
+
+- ✅ Valid/invalid commitment submissions
+- ✅ Merkle tree updates with Poseidon hash
+- ✅ ZK proof verification via Groth16
+- ✅ Double-vote detection via nullifier
+- ✅ Batch casting multiple valid votes
+
+Run tests with:
+
+```bash
+# Hardhat
+npx hardhat test
+
+# or Foundry
+forge test
 ```
 
-### Deploy
+---
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+## 🔍 Want to See the ZK Circuit?
 
-### Cast
+Yes, it’s open!  
+The `CIRCOM/` folder includes the full Circom implementation, constraints, and example inputs for generating and verifying proofs.
 
-```shell
-$ cast <subcommand>
-```
+---
 
-### Help
+## 🧾 License
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+MIT © 2025
